@@ -1,0 +1,23 @@
+{
+  "name": "webapp",
+  "version": "1.0.0",
+  "description": "Simple Restful API for Matching people",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yasirharis/SimpleWebApp.git"
+  },
+  "author": "Yasir Haris",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yasirharis/SimpleWebApp/issues"
+  },
+  "homepage": "https://github.com/yasirharis/SimpleWebApp#readme",
+  "dependencies": {
+    "cookie-session": "^1.3.3",
+    "express": "^4.17.0"
+  }
+}

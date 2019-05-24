@@ -1,0 +1,1 @@
+[{ "id": "1", "name": "Yasir", "age": "58" }, { "id": "2", "name": "Ai", "age": "28", "friend": "1" }, { "id": "3", "name": "Suntika", "age": "26", "friend": "1" }, { "id": "4", "name": "Daning", "age": "29", "friend": ["1", "2", "3"] }, { "id": "5", "name": "Ayana", "age": "58", "friend": ["1", "2", "3", "4"] }]

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>People Mathing API</title>
+    <link rel="icon" href="img/favicon.png" sizes="32x32">
+    <link href="css/font.css" rel="stylesheet">
+    <link href="css/materialize.css" type="text/css" rel="stylesheet" media="screen,projection">
+
+    <body>
+        <div class="container z-depth-3">
+            <div id="modal1" class="modal">
+                <div class="modal-content">
+                    <h4>Information</h4>
+                    <p class="flow-text" id="message"></p>
+                </div>
+                <div class="modal-footer">
+                    <a href="#!" class="modal-close waves-effect waves-green btn-flat">Ok</a>
+                </div>
+            </div>
+
+            <p class="flow-text">People Matching API</p>
+            <div class="row">
+                <div class="col s12">
+                    <ul class="tabs">
+                        <li class="tab col s3"><a class="active" href="#test1">ADD</a></li>
+                        <li class="tab col s3"><a href="#test2">GET & MATCH</a></li>
+                    </ul>
+                </div>
+                <div id="test1" class="col s12">
+                    <div class="row">
+                        <form class="col s12" action="#" method="POST">
+                            <div class="row">
+                                <div class="input-field col s6">
+                                    <input id="facebook_id" type="text" name="id">
+                                    <label for="facebook_id">Facebook ID</label>
+                                </div>
+                                <div class="input-field col s6">
+                                    <input id="name" type="text" name="name">
+                                    <label for="name">Name</label>
+                                </div>
+                                <div class="input-field col s6">
+                                    <p class="range-field">
+                                        <label for="age">Age</label>
+                                        <input type="range" id="age" name="age" min="15" max="100" />
+                                    </p>
+                                </div>
+                                <div class="input-field col s6">
+                                    <select multiple id="friend" name="friend">
+                                                                                 
+                                        </select>
+                                    <label>Friend List</label>
+                                </div>
+                                <div class="input-field col s12">
+                                    <button class="btn waves-effect waves-light" type="submit">SAVE</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div id="test2" class="col s12">
+                    <form class="col s12">
+                        <div class="row">
+                            <div class="input-field col s6">
+                                <input id="get_facebook_id" type="text" name="id">
+                                <label for="facebook_id">Facebook ID</label>
+                                <h5 id="selectedAge">Age: 10</h5>
+                            </div>
+                            <div class="input-field col s6">
+                                <input id="get_name" type="text" name="name">
+                                <label for="name">Name</label>
+                            </div>
+
+                        </div>
+
+                    </form>
+                    <h6>Friend List</h6>
+                    <table id="friendTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>Eclair</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td>Tony</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td>Andy</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <h6>Match List</h6>
+                    <table id="matchTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Same Age ?</th>
+                                <th>Mutual Friend ?</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            <tr>
+                                <td>1</td>
+                                <td>Andy</td>
+                                <td>Yes</td>
+                                <td>Yes</td>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+
+        </div>
+        <script src="js/jquery.min.js"></script>
+        <script src="js/materialize.js"></script>
+        <script>
+            $(document).ready(function() {
+                var list = friendListAll();
+                //var user = userData(1, 'Yasir');
+                // var friend = friendList(1, 'Yasir');
+                var match = matchList(5, 'Ayana');
+                console.log(match);
+                $('.tabs').tabs();
+                var select = $('#friend');
+                select.empty();
+                select.append("<option value='' disabled>--choose--</option>");
+                list.forEach(function(obj) {
+                    select.append($('<option></option>').attr('value', obj.id).text(obj.name));
+                });
+                select.formSelect();
+                $('.modal').modal();
+                var message = getCookie('message');
+                if (message) {
+                    var error = getCookie('error');
+                    var msg = $('#message');
+                    if (error == 'true') {
+                        if (!msg.hasClass('red-text'))
+                            msg.addClass('red-text');
+                    } else {
+                        if (msg.hasClass('red-text'))
+                            msg.removeClass('red-text');
+
+                        if (!msg.hasClass('green-text'))
+                            msg.addClass('green-text');
+                    }
+                    msg.html(message);
+                    $('.modal').modal('open');
+                    setCookie('error', null);
+                    setCookie('message', null);
+                }
+
+                $("#get_facebook_id").keydown(function(e) {
+                    if (e.which == 13)
+                        console.log('id');
+                });
+
+                $("#get_name").keydown(function(e) {
+                    if (e.which == 13)
+                        console.log('name');
+                });
+
+
+            });
+
+
+
+            window.getCookie = function(name) {
+                var match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+                return match ? decodeURI(match[2]) : '';
+            }
+            window.setCookie = function(name, value) {
+                document.cookie = value == null ? name + '=' : name + '=' + value;
+            }
+            window.getJson = function(b) {
+                var json = [];
+                try {
+                    json = JSON.parse(atob(b.replace(/%3D/g, '=')));
+                } catch (e) {
+                    return json;
+                } finally {
+                    return json;
+                }
+
+                return json;
+            }
+
+            window.friendListAll = function() {
+                $.get('user');
+                var _list = getCookie('list');
+                return getJson(_list);
+            }
+
+            window.userData = function(_id, _name) {
+                $.get("user?id=" + _id + "&name=" + _name);
+                var _list = getCookie('user');
+                return getJson(_list);
+            }
+            window.friendList = function(_id, _name) {
+                $.get("user?q=friend&id=" + _id + "&name=" + _name);
+                var _list = getCookie('friend');
+                return getJson(_list);
+            }
+            window.matchList = function(_id, _name) {
+                $.get("user?q=match&id=" + _id + "&name=" + _name);
+                var _list = getCookie('match');
+                return getJson(_list);
+            }
+        </script>
+
+    </body>
+
+</html>
