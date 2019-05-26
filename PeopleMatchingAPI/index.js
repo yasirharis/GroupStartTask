@@ -7,15 +7,29 @@ app.use(express.static('public'))
 app.use(parser.urlencoded({ extended: false }));
 app.use(parser.json());
 
+/*
+json file to store user data
+*/
 const userJson = '/public/data/user.json';
 
 const port = 3000;
 
+/*
+expire time for all cookies, 1 minutes
+*/
+const timeout = 1 * 60 * 1000;
 
+/*
+handle general `GET` to show index.html
+*/
 app.get('/', async function(req, res) {
     res.sendFile(__dirname + '/index.html');
 })
 
+/*
+handle 'GET' for list all user,find user, find friend user,
+match age and mutual friend 
+*/
 app.get('/user', async function(req, res) {
     var id = req.query.id;
     var name = req.query.name;
@@ -23,41 +37,42 @@ app.get('/user', async function(req, res) {
     var data = [];
     var jsonFile = __dirname + userJson;
     if (!fs.existsSync(jsonFile)) {
-        res.cookie('user', null);
-        res.cookie('list', null);
+        res.cookie('user', null, { expires: new Date(Date.now() + timeout) });
+        res.cookie('list', null, { expires: new Date(Date.now() + timeout) });
         res.redirect('/');
         return;
+
     }
     data = JSON.parse(fs.readFileSync(jsonFile));
     if (id == undefined && q == undefined) {
-        res.cookie('list', jsonToCookies(data));
+        res.cookie('list', jsonToCookies(data), { expires: new Date(Date.now() + timeout) });
         res.redirect('/');
         return;
     } else if (id != undefined && q == undefined) {
         var i = data.filter(function(item) {
-            return (item.id == id && item.name == name);
+            return (item.id == id || item.name == name);
         });
         if (i.length <= 0) {
-            res.cookie('user', null);
+            res.cookie('user', null, { expires: new Date(Date.now() + timeout) });
             res.redirect('/');
             return;
         }
-        res.cookie('user', jsonToCookies(i[0]));
+        res.cookie('user', jsonToCookies(i[0]), { expires: new Date(Date.now() + timeout) });
         res.redirect('/');
         return;
     } else if (q == 'friend') {
         var i = data.filter(function(item) {
             return (item.id == id || item.name == name);
         });
-        if (i.length <= 0) {
-            res.cookie('friend', null);
+        if (i.length <= 0 || i[0].friend == undefined) {
+            res.cookie('friend', null, { expires: new Date(Date.now() + timeout) });
             res.redirect('/');
             return;
         }
         var friend = [];
         var ids = i[0].friend;
         if (ids == undefined || ids.length <= 0) {
-            res.cookie('friend', null);
+            res.cookie('friend', null, { expires: new Date(Date.now() + timeout) });
             res.redirect('/');
             return;
         }
@@ -72,7 +87,7 @@ app.get('/user', async function(req, res) {
                 return (item.id == ids);
             }));
         }
-        res.cookie('friend', jsonToCookies(friend));
+        res.cookie('friend', jsonToCookies(friend), { expires: new Date(Date.now() + timeout) });
         res.redirect('/');
         return;
     } else if (q == 'match') {
@@ -80,37 +95,65 @@ app.get('/user', async function(req, res) {
             return (item.id == id || item.name == name);
         });
         if (i.length <= 0) {
-            res.cookie('match', null);
+            res.cookie('match', null, { expires: new Date(Date.now() + timeout) });
             res.redirect('/');
             return;
         }
         var age = i[0].age;
-        var match = data.filter(function(item) {
+        var _match = data.filter(function(item) {
             return (item.age == age && (item.id != id || item.name != name));
         });
-        console.log(match);
+        if (_match == undefined || _match.length <= 0) {
+            res.cookie('match', null, { expires: new Date(Date.now() + timeout) });
+            res.redirect('/');
+            return;
+        }
+        var match = [];
+        _match.forEach(function(e) {
+            var f = e;
+            var ismutual = false;
+            if (f.friend != undefined && i[0].friend != undefined) {
+                var g = f.friend.length > i[0].friend.length ? f.friend : i[0].friend;
+                var h = f.friend.length < i[0].friend.length ? f.friend : i[0].friend;
+                for (var j in g) {
+                    ismutual = h.includes(j);
+                    if (ismutual == true)
+                        break;
+                }
+            }
+            f.ismutual = ismutual;
+            f.sameage = true;
+
+            match.push(f);
+        });
+
         if (match == undefined || match.length <= 0) {
-            res.cookie('match', null);
+            res.cookie('match', null, { expires: new Date(Date.now() + timeout) });
             res.redirect('/');
             return;
         }
 
-        res.cookie('match', jsonToCookies(match));
+        res.cookie('match', jsonToCookies(match), { expires: new Date(Date.now() + timeout) });
         res.redirect('/');
         return;
     }
 
 })
 
+/*
+handle 'POST' for save new user, update age and friend 
+*/
 app.post('/', function(req, res) {
     var saveUser = save(req, saveUser);
-    console.log(saveUser);
-    res.cookie('error', saveUser.error);
-    res.cookie('message', saveUser.message);
-    res.cookie('list', jsonToCookies(saveUser.list));
+    res.cookie('error', saveUser.error, { expires: new Date(Date.now() + timeout) });
+    res.cookie('message', saveUser.message, { expires: new Date(Date.now() + timeout) });
+    res.cookie('list', jsonToCookies(saveUser.list), { expires: new Date(Date.now() + timeout) });
     res.redirect('/');
 })
 
+/*
+handle read and write user data to json file 
+*/
 function save(_req) {
     var data = [];
     data.error = true;
@@ -125,11 +168,12 @@ function save(_req) {
         return (item.id == _req.body.id || item.name == _req.body.name);
     });
 
-    if (i.length > 0) //user exist
-    {
+    if (i.length > 0) {
         var index = jsonData.indexOf(i[0]);
         jsonData[index].age = _req.body.age;
-        jsonData[index].friend = _req.body.friend.filter(distinct());
+        var friend = _req.body.friend;
+        if (friend != undefined)
+            jsonData[index].friend = friend.length > 0 ? friend.filter(distinct()) : friend;
         fs.writeFile(jsonFile, JSON.stringify(jsonData), 'ascii', function(err) {
             if (err) {
                 data.message = "An error occured while writing JSON Object to File.";
@@ -158,10 +202,16 @@ function save(_req) {
 
 }
 
+/*
+parsing json to cookies, require to be encode to base64 string.
+*/
 function jsonToCookies(json) {
     return Buffer.from(JSON.stringify(json)).toString('base64');
 }
 
+/*
+show only distinct element in array
+*/
 function distinct(value, index, self) {
     return self.indexOf(value) === index;
 }
